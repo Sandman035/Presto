@@ -11,7 +11,7 @@ cFilenames=$(find . -type f -name "*.cpp")
 assembly="presto"
 compilerFlags="-g" 
 includeFlags="-Isrc"
-linkerFlags="-lstdc++"
+linkerFlags="-lstdc++ -lxcb"
 defines=""
 #defines="-DIMPORT"
 
