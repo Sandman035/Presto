@@ -1,22 +1,31 @@
 #include <iostream>
 #include "window_manager.h"
+#include "log.h"
+
+#include <unistd.h>
 
 int main() {
+	log::init();
+
 	presto::WindowManager wm;
 
 	if (presto::connect(&wm)) {
 		return 1;
 	}
 
-	std::cout << "Connected to x server\n";
+	log::log("connected to the x server");
 
 	int i = 0;
 	while (!wm.shouldClose()) {
-		if (i >= 1000000000)
+		//presto::run(&wm);
+
+		if (i >= 100)
 			presto::close(&wm);
 
 		i++;
 	}
 
 	presto::disconnect(&wm);
+
+	log::shutdown();
 }

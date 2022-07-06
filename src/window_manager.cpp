@@ -1,14 +1,17 @@
 #include "window_manager.h"
+#include "event.h"
+#include "log.h"
 
 #include <iostream>
 #include <xcb/xcb_keysyms.h>
+//#include <X11/keysymdef.h>
 
 namespace presto {
 	int connect(WindowManager* wm) {
 		wm->connection = xcb_connect(NULL, NULL);
 
 		if (xcb_connection_has_error(wm->connection)) {
-			std::cout << "a connection error occured\n";
+			log::log("a connection error occured");
 			return 1;
 		}
 
@@ -16,6 +19,8 @@ namespace presto {
 
 		xcb_change_window_attributes(wm->connection, wm->screen->root, XCB_CW_EVENT_MASK, (uint32_t[]){XCB_EVENT_MASK_PROPERTY_CHANGE});
 		xcb_ungrab_key(wm->connection, XCB_GRAB_ANY, wm->screen->root, XCB_MOD_MASK_ANY);
+
+		//TODO: get and ungrab keybindings from config file
 
 		xcb_flush(wm->connection);
 
@@ -27,12 +32,30 @@ namespace presto {
 		return 0;
 	}
 
+	void run(WindowManager* wm) {
+		if (xcb_connection_has_error(wm->connection)) {
+			log::log("an error occured");
+			close(wm);
+			return;
+		}
+
+		xcb_generic_event_t * event = xcb_wait_for_event(wm->connection);
+		if (event != NULL) {
+			handleEvent(wm, event);
+
+			free(event);
+		}
+		xcb_flush(wm->connection);
+	}
+
 	void close(WindowManager* wm) {
 		wm->_close = true;
 	}
 
 	void disconnect(WindowManager* wm) {
+		xcb_ungrab_key(wm->connection, XCB_GRAB_ANY, wm->screen->root, XCB_MOD_MASK_ANY);
+
 		xcb_disconnect(wm->connection);
-		std::cout << "disconnected from the x server\n";
+		log::log("disconnect from the x server");
 	}
 }

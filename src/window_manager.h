@@ -15,7 +15,7 @@ namespace presto {
 	};
 
 	int connect(WindowManager* wm);
-	int run();
+	void run(WindowManager* wm);
 	void close(WindowManager* wm);
 	void disconnect(WindowManager* wm);
 }
