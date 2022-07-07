@@ -6,6 +6,7 @@ namespace presto {
 	struct WindowManager {
 		xcb_connection_t* connection;
 		xcb_screen_t* screen;
+		xcb_drawable_t window;
 
 		bool shouldClose() { return _close; }
 

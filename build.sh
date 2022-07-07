@@ -9,11 +9,10 @@ cFilenames=$(find . -type f -name "*.cpp")
 # echo "Files:" $cFilenames
 
 assembly="presto"
-compilerFlags="-g" 
+compilerFlags="" 
 includeFlags="-Isrc"
-linkerFlags="-lstdc++ -lxcb"
+linkerFlags="-lstdc++ -lxcb -lxcb-keysyms -lm"
 defines=""
-#defines="-DIMPORT"
 
 echo "Building $assembly..."
 echo clang $cFilenames $compilerFlags -o bin/$assembly $defines $includeFlags $linkerFlags

@@ -6,7 +6,7 @@
 
 int main() {
 	log::init();
-
+	
 	presto::WindowManager wm;
 
 	if (presto::connect(&wm)) {
@@ -15,14 +15,8 @@ int main() {
 
 	log::log("connected to the x server");
 
-	int i = 0;
 	while (!wm.shouldClose()) {
-		//presto::run(&wm);
-
-		if (i >= 100)
-			presto::close(&wm);
-
-		i++;
+		presto::run(&wm);
 	}
 
 	presto::disconnect(&wm);

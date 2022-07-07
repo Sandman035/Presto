@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <xcb/xcb_keysyms.h>
-//#include <X11/keysymdef.h>
+#include <X11/keysymdef.h>
 
 namespace presto {
 	int connect(WindowManager* wm) {
@@ -20,7 +20,13 @@ namespace presto {
 		xcb_change_window_attributes(wm->connection, wm->screen->root, XCB_CW_EVENT_MASK, (uint32_t[]){XCB_EVENT_MASK_PROPERTY_CHANGE});
 		xcb_ungrab_key(wm->connection, XCB_GRAB_ANY, wm->screen->root, XCB_MOD_MASK_ANY);
 
-		//TODO: get and ungrab keybindings from config file
+		//TODO: get and grab keybindings from config file
+		xcb_key_symbols_t *keysyms = xcb_key_symbols_alloc(wm->connection);
+		xcb_keycode_t *keycode;
+		keycode = (!(keysyms) ? NULL : xcb_key_symbols_get_keycode(keysyms, 0x0078));
+		xcb_key_symbols_free(keysyms);
+
+		xcb_grab_key(wm->connection, 1, wm->screen->root, XCB_MOD_MASK_4 | XCB_MOD_MASK_SHIFT, *keycode, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
 
 		xcb_flush(wm->connection);
 
