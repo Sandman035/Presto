@@ -36,7 +36,7 @@ namespace presto {
 			xcb_get_geometry_reply_t* geometry = xcb_get_geometry_reply(wm->connection, geoCookie, 0);
 			if (!((pointer->root_x <= geometry->x) || (pointer->root_y <= geometry->y))) {
 				xcb_configure_window(wm->connection, wm->window, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, (uint32_t[]){
-						(uint32_t)pointer->root_x - geometry->x - 1, (uint32_t)pointer->root_y - geometry->y - 1});
+						(uint32_t)pointer->root_x - geometry->x - 1 + wm->offsetX2, (uint32_t)pointer->root_y - geometry->y - 1 + wm->offsetY2});
 				// TODO: Resize from corner closest to cursor and same as the moving, not from the pointers poisition but displacement
 			}
 		}
@@ -74,6 +74,8 @@ namespace presto {
 			xcb_get_geometry_reply_t* geometry = xcb_get_geometry_reply(wm->connection, geoCookie, 0);
 			wm->offsetX = pointer->root_x - geometry->x;
 			wm->offsetY = pointer->root_y - geometry->y;
+			wm->offsetX2 = geometry->width - wm->offsetX;
+			wm->offsetY2 = geometry->height - wm->offsetY;
 		}
 	}
 
