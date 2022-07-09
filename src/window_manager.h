@@ -8,6 +8,8 @@ namespace presto {
 		xcb_screen_t* screen;
 		xcb_drawable_t window;
 
+		uint32_t value;
+
 		bool shouldClose() { return _close; }
 
 		friend void close(WindowManager* wm);

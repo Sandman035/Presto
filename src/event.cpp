@@ -20,31 +20,70 @@ namespace presto {
 
 	void handleEvent(WindowManager* wm, xcb_generic_event_t* event) {
 		auto func = handleFunctions.find(event->response_type);
-		(*func->second)(wm, event);
-		log::log("this worked");
+		if (func != handleFunctions.end()) {
+			(*func->second)(wm, event);
+		}
+		log::log("Success");
 	}
 
 	void handleMotion(WindowManager* wm, xcb_generic_event_t* event) {
+		log::log("Motion");
+		xcb_query_pointer_cookie_t coord = xcb_query_pointer(wm->connection, wm->screen->root);
+		xcb_query_pointer_reply_t* pointer = xcb_query_pointer_reply(wm->connection, coord, 0);
+		if (wm->value == 1 && wm->window != 0) {
+			xcb_get_geometry_cookie_t geoCookie = xcb_get_geometry(wm->connection, wm->window);
+			xcb_get_geometry_reply_t* geometry = xcb_get_geometry_reply(wm->connection, geoCookie, 0);
+			uint16_t geometryX = geometry->width + 2;
+			uint16_t geometryY = geometry->height + 2;
+
+			// TODO:Instead of moving window to the cursors position move the window by how much the mouse moved aka: find the difference between the mouse and the window and substract it from the mouse pos
+			xcb_configure_window(wm->connection, wm->window, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, (uint32_t[]){
+					((pointer->root_x + geometryX) > wm->screen->width_in_pixels) ? (uint32_t)(wm->screen->width_in_pixels - geometryX) : (uint32_t)pointer->root_x,
+					((pointer->root_y + geometryY) > wm->screen->height_in_pixels) ? (uint32_t)(wm->screen->height_in_pixels - geometryY) : (uint32_t)pointer->root_y});
+		} else if (wm->value == 3 && wm->window != 0) {
+			xcb_get_geometry_cookie_t geoCookie = xcb_get_geometry(wm->connection, wm->window);
+			xcb_get_geometry_reply_t* geometry = xcb_get_geometry_reply(wm->connection, geoCookie, 0);
+			if (!((pointer->root_x <= geometry->x) || (pointer->root_y <= geometry->y))) {
+				xcb_configure_window(wm->connection, wm->window, XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT, (uint32_t[]){
+						(uint32_t)pointer->root_x - geometry->x - 1, (uint32_t)pointer->root_y - geometry->y - 1});
+				// TODO: Resize from corner closest to cursor and same as the moving, not from the pointers poisition but displacement
+			}
+		}
 	}
 
 	void handleEnter(WindowManager* wm, xcb_generic_event_t* event) {
+		log::log("Enter");
+		xcb_enter_notify_event_t* enterEvent = (xcb_enter_notify_event_t*) event;
+		if (enterEvent->event != 0 && enterEvent->event != wm->screen->root) {
+			xcb_set_input_focus(wm->connection, XCB_INPUT_FOCUS_POINTER_ROOT, enterEvent->event, XCB_CURRENT_TIME);
+		}
 	}
 
 	void handleDestroy(WindowManager* wm, xcb_generic_event_t* event) {
+		log::log("Destroy");
+		xcb_destroy_notify_event_t* destroyEvent = (xcb_destroy_notify_event_t*) event;
+		xcb_kill_client(wm->connection, destroyEvent->window); // Program seg faults destroying or after destroying a client i don't know why
+															   // TODO: fix this bug
 	}
 
 	void handleButtonPress(WindowManager* wm, xcb_generic_event_t* event) {
+		log::log("Button Press");
 		xcb_button_press_event_t* buttonEvent = (xcb_button_press_event_t*)event;
-		wm->window = buttonEvent->child; //Window variable might need to be part of wm
-		xcb_configure_window(wm->connection, wm->window, XCB_CONFIG_WINDOW_STACK_MODE, (uint32_t[]){XCB_STACK_MODE_ABOVE});
-		xcb_grab_pointer(wm->connection, 0, wm->screen->root, XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_BUTTON_MOTION | XCB_EVENT_MASK_POINTER_MOTION_HINT, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, wm->screen->root, XCB_NONE, XCB_CURRENT_TIME);
+		if (buttonEvent->child != 0 && buttonEvent->child != wm->screen->root) {
+			wm->window = buttonEvent->child;
+			xcb_configure_window(wm->connection, wm->window, XCB_CONFIG_WINDOW_STACK_MODE, (uint32_t[]){XCB_STACK_MODE_ABOVE});
+			wm->value = ((1 == buttonEvent->detail) ? 1 : ((wm->window != 0) ? 3 : 0));
+			xcb_grab_pointer(wm->connection, 0, wm->screen->root, XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_BUTTON_MOTION | XCB_EVENT_MASK_POINTER_MOTION_HINT, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, wm->screen->root, XCB_NONE, XCB_CURRENT_TIME);
+		}
 	}
 
 	void handleButtonRelease(WindowManager* wm, xcb_generic_event_t* event) {
+		log::log("Button Release");
 		xcb_ungrab_pointer(wm->connection, XCB_CURRENT_TIME);
 	}
 	
 	void handleKeyPress(WindowManager* wm, xcb_generic_event_t* event) {
+		log::log("Key");
 		xcb_key_press_event_t* keyEvent = (xcb_key_press_event_t*)event;
 		xcb_key_symbols_t* keysyms = xcb_key_symbols_alloc(wm->connection);
 		xcb_keysym_t keysym;
@@ -57,11 +96,42 @@ namespace presto {
 	}
 
 	void handleMapRequest(WindowManager* wm, xcb_generic_event_t* event) {
+		log::log("Map");
+		xcb_map_request_event_t* mapEvent = (xcb_map_request_event_t*)event;
+		xcb_map_window(wm->connection, mapEvent->window);
+	
+		xcb_configure_window(wm->connection,
+				mapEvent->window,
+				XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT | XCB_CONFIG_WINDOW_BORDER_WIDTH,
+				(uint32_t[]){
+				(uint32_t)(wm->screen->width_in_pixels / 2) - (800 / 2),
+				(uint32_t)(wm->screen->height_in_pixels / 2) - (600 / 2),
+				800,
+				600,
+				1});
+
+		xcb_flush(wm->connection);
+		xcb_change_window_attributes_checked(wm->connection, mapEvent->window, XCB_CW_EVENT_MASK, (uint32_t[]){XCB_EVENT_MASK_ENTER_WINDOW | XCB_EVENT_MASK_FOCUS_CHANGE});
+		if (mapEvent->window != wm->screen->root) {
+			xcb_set_input_focus(wm->connection, XCB_INPUT_FOCUS_POINTER_ROOT, mapEvent->window, XCB_CURRENT_TIME);
+		}
 	}
 
 	void handleFocusIn(WindowManager* wm, xcb_generic_event_t* event) {
+		log::log("Focus In");
+		xcb_focus_in_event_t* focusEvent = (xcb_focus_in_event_t*)event;
+		if (focusEvent->event != 0 && focusEvent->event != wm->screen->root) {
+			xcb_change_window_attributes(wm->connection, focusEvent->event, XCB_CW_BORDER_PIXEL, (uint32_t[]){0xFFFFFF});
+			xcb_flush(wm->connection);
+		}
 	}
 
 	void handleFocusOut(WindowManager* wm, xcb_generic_event_t* event) {
+		log::log("Focus Out");
+		xcb_focus_in_event_t* focusEvent = (xcb_focus_in_event_t*)event;
+		if (focusEvent->event != 0 && focusEvent->event != wm->screen->root) {
+			xcb_change_window_attributes(wm->connection, focusEvent->event, XCB_CW_BORDER_PIXEL, (uint32_t[]){0x696969});
+			xcb_flush(wm->connection);
+		}
 	}
 }

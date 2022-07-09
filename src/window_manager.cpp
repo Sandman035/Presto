@@ -17,7 +17,10 @@ namespace presto {
 
 		wm->screen = xcb_setup_roots_iterator(xcb_get_setup(wm->connection)).data;
 
-		xcb_change_window_attributes(wm->connection, wm->screen->root, XCB_CW_EVENT_MASK, (uint32_t[]){XCB_EVENT_MASK_PROPERTY_CHANGE});
+		xcb_change_window_attributes(wm->connection, wm->screen->root, XCB_CW_EVENT_MASK, (uint32_t[]){XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT
+		| XCB_EVENT_MASK_STRUCTURE_NOTIFY
+		| XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY
+		| XCB_EVENT_MASK_PROPERTY_CHANGE});
 		xcb_ungrab_key(wm->connection, XCB_GRAB_ANY, wm->screen->root, XCB_MOD_MASK_ANY);
 
 		//TODO: get and grab keybindings from config file
