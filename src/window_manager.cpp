@@ -55,6 +55,7 @@ namespace presto {
 			free(event);
 		}
 		xcb_flush(wm->connection);
+		log::log("Success");
 	}
 
 	void close(WindowManager* wm) {

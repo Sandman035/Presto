@@ -15,15 +15,14 @@ namespace presto {
 		{ XCB_MAP_REQUEST,    handleMapRequest },
 		{ XCB_FOCUS_IN,       handleFocusIn },
 		{ XCB_FOCUS_OUT,      handleFocusOut },
-		{ XCB_NONE,           NULL }
 	};
 
 	void handleEvent(WindowManager* wm, xcb_generic_event_t* event) {
 		auto func = handleFunctions.find(event->response_type);
 		if (func != handleFunctions.end()) {
+			log::log("trying function");
 			(*func->second)(wm, event);
 		}
-		log::log("Success");
 	}
 
 	void handleMotion(WindowManager* wm, xcb_generic_event_t* event) {
@@ -62,8 +61,7 @@ namespace presto {
 	void handleDestroy(WindowManager* wm, xcb_generic_event_t* event) {
 		log::log("Destroy");
 		xcb_destroy_notify_event_t* destroyEvent = (xcb_destroy_notify_event_t*) event;
-		xcb_kill_client(wm->connection, destroyEvent->window); // Program seg faults destroying or after destroying a client i don't know why
-															   // TODO: fix this bug
+		xcb_kill_client(wm->connection, destroyEvent->window); 
 	}
 
 	void handleButtonPress(WindowManager* wm, xcb_generic_event_t* event) {
