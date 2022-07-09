@@ -10,6 +10,9 @@ namespace presto {
 
 		uint32_t value;
 
+		uint32_t offsetX;
+		uint32_t offsetY;
+
 		bool shouldClose() { return _close; }
 
 		friend void close(WindowManager* wm);

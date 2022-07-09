@@ -30,15 +30,7 @@ namespace presto {
 		xcb_query_pointer_cookie_t coord = xcb_query_pointer(wm->connection, wm->screen->root);
 		xcb_query_pointer_reply_t* pointer = xcb_query_pointer_reply(wm->connection, coord, 0);
 		if (wm->value == 1 && wm->window != 0) {
-			xcb_get_geometry_cookie_t geoCookie = xcb_get_geometry(wm->connection, wm->window);
-			xcb_get_geometry_reply_t* geometry = xcb_get_geometry_reply(wm->connection, geoCookie, 0);
-			uint16_t geometryX = geometry->width + 2;
-			uint16_t geometryY = geometry->height + 2;
-
-			// TODO:Instead of moving window to the cursors position move the window by how much the mouse moved aka: find the difference between the mouse and the window and substract it from the mouse pos
-			xcb_configure_window(wm->connection, wm->window, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, (uint32_t[]){
-					((pointer->root_x + geometryX) > wm->screen->width_in_pixels) ? (uint32_t)(wm->screen->width_in_pixels - geometryX) : (uint32_t)pointer->root_x,
-					((pointer->root_y + geometryY) > wm->screen->height_in_pixels) ? (uint32_t)(wm->screen->height_in_pixels - geometryY) : (uint32_t)pointer->root_y});
+			xcb_configure_window(wm->connection, wm->window, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, (uint32_t[]){pointer->root_x - wm->offsetX, pointer->root_y - wm->offsetY});
 		} else if (wm->value == 3 && wm->window != 0) {
 			xcb_get_geometry_cookie_t geoCookie = xcb_get_geometry(wm->connection, wm->window);
 			xcb_get_geometry_reply_t* geometry = xcb_get_geometry_reply(wm->connection, geoCookie, 0);
@@ -71,7 +63,17 @@ namespace presto {
 			wm->window = buttonEvent->child;
 			xcb_configure_window(wm->connection, wm->window, XCB_CONFIG_WINDOW_STACK_MODE, (uint32_t[]){XCB_STACK_MODE_ABOVE});
 			wm->value = ((1 == buttonEvent->detail) ? 1 : ((wm->window != 0) ? 3 : 0));
-			xcb_grab_pointer(wm->connection, 0, wm->screen->root, XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_BUTTON_MOTION | XCB_EVENT_MASK_POINTER_MOTION_HINT, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, wm->screen->root, XCB_NONE, XCB_CURRENT_TIME);
+			xcb_grab_pointer(wm->connection, 0, wm->screen->root,
+					XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_BUTTON_MOTION | XCB_EVENT_MASK_POINTER_MOTION_HINT,
+					XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC, wm->screen->root, XCB_NONE,
+					XCB_CURRENT_TIME);
+
+			xcb_query_pointer_cookie_t coord = xcb_query_pointer(wm->connection, wm->screen->root);
+			xcb_query_pointer_reply_t* pointer = xcb_query_pointer_reply(wm->connection, coord, 0);
+			xcb_get_geometry_cookie_t geoCookie = xcb_get_geometry(wm->connection, wm->window);
+			xcb_get_geometry_reply_t* geometry = xcb_get_geometry_reply(wm->connection, geoCookie, 0);
+			wm->offsetX = pointer->root_x - geometry->x;
+			wm->offsetY = pointer->root_y - geometry->y;
 		}
 	}
 
