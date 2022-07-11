@@ -17,6 +17,15 @@ namespace presto {
 
 		wm->screen = xcb_setup_roots_iterator(xcb_get_setup(wm->connection)).data;
 
+		wm->monitors = getMonitors(wm->connection, wm->screen->root);
+
+		for (int i = 0; i < wm->monitors.size(); i++) {
+			log::log(std::to_string(wm->monitors[i].width));
+			log::log(std::to_string(wm->monitors[i].height));
+			log::log(std::to_string(wm->monitors[i].x));
+			log::log(std::to_string(wm->monitors[i].y));
+		}
+
 		xcb_change_window_attributes(wm->connection, wm->screen->root, XCB_CW_EVENT_MASK, (uint32_t[]){XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT
 		| XCB_EVENT_MASK_STRUCTURE_NOTIFY
 		| XCB_EVENT_MASK_SUBSTRUCTURE_NOTIFY

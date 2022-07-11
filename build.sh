@@ -11,7 +11,7 @@ cFilenames=$(find . -type f -name "*.cpp")
 assembly="presto"
 compilerFlags="" 
 includeFlags="-Isrc"
-linkerFlags="-lstdc++ -lxcb -lxcb-keysyms -lm"
+linkerFlags="-lstdc++ -lxcb -lxcb-keysyms -lxcb-randr -lm"
 defines=""
 
 echo "Building $assembly..."

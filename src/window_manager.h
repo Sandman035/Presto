@@ -1,11 +1,17 @@
 #pragma once
 
 #include <xcb/xcb.h>
+#include <vector>
+
+#include "monitors.h"
 
 namespace presto {
 	struct WindowManager {
 		xcb_connection_t* connection;
 		xcb_screen_t* screen;
+
+		std::vector<Monitor> monitors;
+
 		xcb_drawable_t window;
 
 		uint32_t value;
