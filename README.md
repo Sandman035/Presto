@@ -1,4 +1,5 @@
 # Presto
+![logo](https://github.com/Sandman035/Presto/blob/main/res/branding/presto_logo.png?raw=true)
 Presto is a window manager that focusses on simplicity and speed that will suit my needs.
 
 ## Why?

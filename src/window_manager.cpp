@@ -5,6 +5,7 @@
 #include <iostream>
 #include <xcb/xcb_keysyms.h>
 #include <X11/keysymdef.h>
+#include <xcb/xcb_cursor.h>
 
 namespace presto {
 	int connect(WindowManager* wm) {
@@ -19,12 +20,9 @@ namespace presto {
 
 		wm->monitors = getMonitors(wm->connection, wm->screen->root);
 
-		for (int i = 0; i < wm->monitors.size(); i++) {
-			log::log(std::to_string(wm->monitors[i].width));
-			log::log(std::to_string(wm->monitors[i].height));
-			log::log(std::to_string(wm->monitors[i].x));
-			log::log(std::to_string(wm->monitors[i].y));
-		}
+		xcb_cursor_context_t* cursorContext;
+		xcb_cursor_context_new(wm->connection, wm->screen, &cursorContext);
+		xcb_change_window_attributes(wm->connection, wm->screen->root, XCB_CW_CURSOR, (uint32_t[]){xcb_cursor_load_cursor(cursorContext, "left_ptr")});
 
 		xcb_change_window_attributes(wm->connection, wm->screen->root, XCB_CW_EVENT_MASK, (uint32_t[]){XCB_EVENT_MASK_SUBSTRUCTURE_REDIRECT
 		| XCB_EVENT_MASK_STRUCTURE_NOTIFY
