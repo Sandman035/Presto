@@ -8,6 +8,21 @@
 #include <xcb/xcb_cursor.h>
 
 namespace presto {
+	KeyBindings keys[] {
+		{0x0078, XCB_MOD_MASK_4 | XCB_MOD_MASK_SHIFT},
+		{0x0030, XCB_MOD_MASK_4},
+		{0x0031, XCB_MOD_MASK_4},
+		{0x0032, XCB_MOD_MASK_4},
+		{0x0033, XCB_MOD_MASK_4},
+		{0x0034, XCB_MOD_MASK_4},
+		{0x0035, XCB_MOD_MASK_4},
+		{0x0036, XCB_MOD_MASK_4},
+		{0x0037, XCB_MOD_MASK_4},
+		{0x0038, XCB_MOD_MASK_4},
+		{0x0039, XCB_MOD_MASK_4},
+		{0x0070, XCB_MOD_MASK_4},
+	};
+
 	int connect(WindowManager* wm) {
 		wm->connection = xcb_connect(NULL, NULL);
 
@@ -19,6 +34,13 @@ namespace presto {
 		wm->screen = xcb_setup_roots_iterator(xcb_get_setup(wm->connection)).data;
 
 		wm->monitors = getMonitors(wm->connection, wm->screen->root);
+		if (!wm->monitors.empty()) {
+			for (int i = 0; i < wm->monitors.size(); i++) {
+				wm->monitors[i].currentWorkspace = i + 1;
+				wm->workspaces[i + 1].active = true;
+				wm->workspaces[i + 1].monitor = i;
+			}
+		}
 
 		xcb_cursor_context_t* cursorContext;
 		xcb_cursor_context_new(wm->connection, wm->screen, &cursorContext);
@@ -31,12 +53,14 @@ namespace presto {
 		xcb_ungrab_key(wm->connection, XCB_GRAB_ANY, wm->screen->root, XCB_MOD_MASK_ANY);
 
 		//TODO: get and grab keybindings from config file
-		xcb_key_symbols_t *keysyms = xcb_key_symbols_alloc(wm->connection);
-		xcb_keycode_t *keycode;
-		keycode = (!(keysyms) ? NULL : xcb_key_symbols_get_keycode(keysyms, 0x0078));
-		xcb_key_symbols_free(keysyms);
+		for (int i = 0; i < sizeof(keys)/sizeof(keys[0]); i++) {
+			xcb_key_symbols_t *keysyms = xcb_key_symbols_alloc(wm->connection);
+			xcb_keycode_t *keycode;
+			keycode = (!(keysyms) ? NULL : xcb_key_symbols_get_keycode(keysyms, keys[i].keyCode));
+			xcb_key_symbols_free(keysyms);
 
-		xcb_grab_key(wm->connection, 1, wm->screen->root, XCB_MOD_MASK_4 | XCB_MOD_MASK_SHIFT, *keycode, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
+			xcb_grab_key(wm->connection, 1, wm->screen->root, keys[i].mod, *keycode, XCB_GRAB_MODE_ASYNC, XCB_GRAB_MODE_ASYNC);
+		}
 
 		xcb_flush(wm->connection);
 
@@ -62,7 +86,6 @@ namespace presto {
 			free(event);
 		}
 		xcb_flush(wm->connection);
-		log::log("Success");
 	}
 
 	void close(WindowManager* wm) {

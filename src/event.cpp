@@ -4,6 +4,8 @@
 #include <xcb/xcb_keysyms.h>
 #include "log.h"
 
+#include <sys/wait.h>
+
 namespace presto {
 	std::unordered_map<uint8_t, func> handleFunctions {
 		{ XCB_MOTION_NOTIFY,  handleMotion },
@@ -20,7 +22,6 @@ namespace presto {
 	void handleEvent(WindowManager* wm, xcb_generic_event_t* event) {
 		auto func = handleFunctions.find(event->response_type);
 		if (func != handleFunctions.end()) {
-			log::log("trying function");
 			(*func->second)(wm, event);
 		}
 	}
@@ -54,6 +55,11 @@ namespace presto {
 		log::log("Destroy");
 		xcb_destroy_notify_event_t* destroyEvent = (xcb_destroy_notify_event_t*) event;
 		xcb_kill_client(wm->connection, destroyEvent->window); 
+		for (int i = 0; i < sizeof(wm->workspaces)/sizeof(wm->workspaces[0]); i++) {
+			if (wm->workspaces[i].windows.empty()) 
+				continue;
+			wm->workspaces[i].windows.remove(destroyEvent->window);
+		}
 	}
 
 	void handleButtonPress(WindowManager* wm, xcb_generic_event_t* event) {
@@ -94,6 +100,50 @@ namespace presto {
 		wm->window = keyEvent->child;
 		if ((keysym == 0x0078) && (keyEvent->state == XCB_MOD_MASK_4 | XCB_MOD_MASK_SHIFT)) {
 			close(wm);
+		} else if ((keysym == 0x0070) && (keyEvent->state == XCB_MOD_MASK_4)) {
+			if (fork() == 0) {
+				setsid();
+				if (fork() != 0) {
+					_exit(0);
+				}
+				execvp("dmenu_run", NULL);
+				_exit(0);
+			}
+			wait(NULL);
+		} else if (keysym >= 0x0030 && keysym <= 0x0039 && keyEvent->state == XCB_MOD_MASK_4) {
+			int monitor = getMonitorUnderCursor(wm->connection, wm->screen->root, wm->monitors);
+			log::log(std::to_string(wm->monitors[monitor].currentWorkspace));
+			log::log(std::to_string(keysym - 48));
+			if (wm->monitors[monitor].currentWorkspace != keysym - 48) {
+				std::list<xcb_window_t>::iterator it;
+				if (wm->workspaces[keysym - 48].active && wm->workspaces[keysym - 48].monitor != monitor) {
+					if (wm->monitors[wm->workspaces[keysym - 48].monitor].currentWorkspace != keysym - 48) {
+						if (!wm->workspaces[wm->monitors[wm->workspaces[keysym -48].monitor].currentWorkspace].windows.empty()) {
+							for (it = wm->workspaces[wm->monitors[wm->workspaces[keysym -48].monitor].currentWorkspace].windows.begin(); it != wm->workspaces[wm->monitors[wm->workspaces[keysym -48].monitor].currentWorkspace].windows.end(); ++it) {
+								xcb_unmap_window(wm->connection, *it);
+							}
+						} else {
+							wm->workspaces[wm->monitors[wm->workspaces[keysym -48].monitor].currentWorkspace].active = false;
+						}
+						wm->monitors[wm->workspaces[keysym - 48].monitor].currentWorkspace = keysym - 48;
+					}
+				} else {
+					for (it = wm->workspaces[wm->monitors[monitor].currentWorkspace].windows.begin(); it != wm->workspaces[wm->monitors[monitor].currentWorkspace].windows.end(); ++it) {
+						xcb_unmap_window(wm->connection, *it);
+					}
+
+					wm->monitors[monitor].currentWorkspace = keysym - 48;
+					wm->workspaces[keysym - 48].monitor = monitor;
+					
+					if (wm->workspaces[wm->monitors[monitor].currentWorkspace].windows.empty()) {
+						wm->workspaces[wm->monitors[monitor].currentWorkspace].active = false;
+					}
+				}
+
+				for (it = wm->workspaces[keysym - 48].windows.begin(); it != wm->workspaces[keysym -48].windows.end(); ++it) {
+					xcb_map_window(wm->connection, *it);
+				}
+			}
 		}
 	}
 
@@ -102,6 +152,7 @@ namespace presto {
 		xcb_map_request_event_t* mapEvent = (xcb_map_request_event_t*)event;
 		xcb_map_window(wm->connection, mapEvent->window);
 	
+		if (wm->monitors.empty()) {
 		xcb_configure_window(wm->connection,
 				mapEvent->window,
 				XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT | XCB_CONFIG_WINDOW_BORDER_WIDTH,
@@ -111,6 +162,20 @@ namespace presto {
 				800,
 				600,
 				1});
+		} else {
+			int monitor = getMonitorUnderCursor(wm->connection, wm->screen->root, wm->monitors);
+			wm->workspaces[wm->monitors[monitor].currentWorkspace].windows.push_back(mapEvent->window);
+			wm->workspaces[wm->monitors[monitor].currentWorkspace].active = true;
+			xcb_configure_window(wm->connection,
+					mapEvent->window,
+					XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT | XCB_CONFIG_WINDOW_BORDER_WIDTH,
+					(uint32_t[]){
+					(uint32_t)wm->monitors[monitor].x + (wm->monitors[monitor].width / 2) - (800 / 2),
+					(uint32_t)wm->monitors[monitor].y + (wm->monitors[monitor].height	/ 2) - (600 / 2),
+					800,
+					600,
+					1});
+		}
 
 		xcb_flush(wm->connection);
 		xcb_change_window_attributes_checked(wm->connection, mapEvent->window, XCB_CW_EVENT_MASK, (uint32_t[]){XCB_EVENT_MASK_ENTER_WINDOW | XCB_EVENT_MASK_FOCUS_CHANGE});

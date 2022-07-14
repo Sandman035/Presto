@@ -4,13 +4,20 @@
 #include <vector>
 
 #include "monitors.h"
+#include "workspaces.h"
 
 namespace presto {
+	struct KeyBindings {
+		xcb_keysym_t keyCode;
+		uint16_t mod;
+	};
+
 	struct WindowManager {
 		xcb_connection_t* connection;
 		xcb_screen_t* screen;
 
 		std::vector<Monitor> monitors;
+		Workspace workspaces[10];
 
 		xcb_drawable_t window;
 

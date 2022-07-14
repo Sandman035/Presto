@@ -1,5 +1,6 @@
 #include "monitors.h"
 
+#include <xcb/xcb.h>
 #include <xcb/randr.h>
 
 namespace presto {
@@ -35,5 +36,16 @@ namespace presto {
 		}
 
 		return monitors;
+	}
+
+	int getMonitorUnderCursor(xcb_connection_t* connection, xcb_window_t root, std::vector<Monitor> monitors) {
+		xcb_query_pointer_cookie_t coord = xcb_query_pointer(connection, root);
+		xcb_query_pointer_reply_t* pointer = xcb_query_pointer_reply(connection, coord, 0);
+		for (int i = 0; i < monitors.size(); i++) {
+			if (pointer->root_x > monitors[i].x && pointer->root_x < monitors[i].x + monitors[i].width && pointer->root_y > monitors[i].y && pointer->root_y < monitors[i].y + monitors[i].height) {
+				return i;
+			}
+		}
+		return 0;
 	}
 }
