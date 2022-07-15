@@ -21,6 +21,13 @@ namespace presto {
 
 		xcb_drawable_t window;
 
+		int keyWorkspaces[4] = {
+			1,
+			2,
+			3,
+			4
+		};
+
 		uint32_t value;
 
 		uint32_t offsetX;

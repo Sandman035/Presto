@@ -111,42 +111,23 @@ namespace presto {
 			}
 			wait(NULL);
 		} else if (keysym >= 0x0030 && keysym <= 0x0039 && keyEvent->state == XCB_MOD_MASK_4) {
-			int monitor = getMonitorUnderCursor(wm->connection, wm->screen->root, wm->monitors);
-			log::log(std::to_string(wm->monitors[monitor].currentWorkspace));
-			log::log(std::to_string(keysym - 48));
-			if (wm->monitors[monitor].currentWorkspace != keysym - 48) {
-				std::list<xcb_window_t>::iterator it;
-				if (wm->workspaces[keysym - 48].active && wm->workspaces[keysym - 48].monitor != monitor) {
-					if (wm->monitors[wm->workspaces[keysym - 48].monitor].currentWorkspace != keysym - 48) {
-						if (!wm->workspaces[wm->monitors[wm->workspaces[keysym -48].monitor].currentWorkspace].windows.empty()) {
-							for (it = wm->workspaces[wm->monitors[wm->workspaces[keysym -48].monitor].currentWorkspace].windows.begin(); it != wm->workspaces[wm->monitors[wm->workspaces[keysym -48].monitor].currentWorkspace].windows.end(); ++it) {
-								xcb_unmap_window(wm->connection, *it);
-							}
-						} else {
-							wm->workspaces[wm->monitors[wm->workspaces[keysym -48].monitor].currentWorkspace].active = false;
-						}
-					}
-					xcb_warp_pointer(wm->connection, XCB_NONE, wm->screen->root, 0, 0, 0, 0, wm->monitors[wm->workspaces[keysym - 48].monitor].width / 2 + wm->monitors[wm->workspaces[keysym - 48].monitor].x, wm->monitors[wm->workspaces[keysym - 48].monitor].height / 2 + wm->monitors[wm->workspaces[keysym - 48].monitor].y);
-					xcb_flush(wm->connection);
-					wm->monitors[wm->workspaces[keysym - 48].monitor].currentWorkspace = keysym - 48;
-				} else {
-					for (it = wm->workspaces[wm->monitors[monitor].currentWorkspace].windows.begin(); it != wm->workspaces[wm->monitors[monitor].currentWorkspace].windows.end(); ++it) {
-						xcb_unmap_window(wm->connection, *it);
-					}
-
-					wm->monitors[monitor].currentWorkspace = keysym - 48;
-					wm->workspaces[keysym - 48].monitor = monitor;
-					
-					if (wm->workspaces[wm->monitors[monitor].currentWorkspace].windows.empty()) {
-						wm->workspaces[wm->monitors[monitor].currentWorkspace].active = false;
-					}
-				}
-
-				for (it = wm->workspaces[keysym - 48].windows.begin(); it != wm->workspaces[keysym -48].windows.end(); ++it) {
-					xcb_map_window(wm->connection, *it);
-				}
-				wm->workspaces[keysym - 48].active = true;
-			}
+			changeWorkspace(wm, keysym - 48);
+		} else if (keysym == 0x0068 && keyEvent->state == XCB_MOD_MASK_4) {
+			changeWorkspace(wm, wm->keyWorkspaces[0]);
+		} else if (keysym == 0x006a && keyEvent->state == XCB_MOD_MASK_4) {
+			changeWorkspace(wm, wm->keyWorkspaces[1]);
+		} else if (keysym == 0x006b && keyEvent->state == XCB_MOD_MASK_4) {
+			changeWorkspace(wm, wm->keyWorkspaces[2]);
+		} else if (keysym == 0x006c && keyEvent->state == XCB_MOD_MASK_4) {
+			changeWorkspace(wm, wm->keyWorkspaces[3]);
+		} else if (keysym == 0x0068 && keyEvent->state == XCB_MOD_MASK_4 | XCB_MOD_MASK_SHIFT) {
+			wm->keyWorkspaces[0] = wm->monitors[getMonitorUnderCursor(wm->connection, wm->screen->root, wm->monitors)].currentWorkspace;
+		} else if (keysym == 0x006a && keyEvent->state == XCB_MOD_MASK_4 | XCB_MOD_MASK_SHIFT) {
+			wm->keyWorkspaces[1] = wm->monitors[getMonitorUnderCursor(wm->connection, wm->screen->root, wm->monitors)].currentWorkspace;
+		} else if (keysym == 0x006b && keyEvent->state == XCB_MOD_MASK_4 | XCB_MOD_MASK_SHIFT) {
+			wm->keyWorkspaces[2] = wm->monitors[getMonitorUnderCursor(wm->connection, wm->screen->root, wm->monitors)].currentWorkspace;
+		} else if (keysym == 0x006c && keyEvent->state == XCB_MOD_MASK_4 | XCB_MOD_MASK_SHIFT) {
+			wm->keyWorkspaces[3] = wm->monitors[getMonitorUnderCursor(wm->connection, wm->screen->root, wm->monitors)].currentWorkspace;
 		}
 	}
 

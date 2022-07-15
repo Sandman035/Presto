@@ -21,6 +21,14 @@ namespace presto {
 		{0x0038, XCB_MOD_MASK_4},
 		{0x0039, XCB_MOD_MASK_4},
 		{0x0070, XCB_MOD_MASK_4},
+		{0x0068, XCB_MOD_MASK_4},
+		{0x006a, XCB_MOD_MASK_4},
+		{0x006b, XCB_MOD_MASK_4},
+		{0x006c, XCB_MOD_MASK_4},
+		{0x0068, XCB_MOD_MASK_4 | XCB_MOD_MASK_SHIFT},
+		{0x006a, XCB_MOD_MASK_4 | XCB_MOD_MASK_SHIFT},
+		{0x006b, XCB_MOD_MASK_4 | XCB_MOD_MASK_SHIFT},
+		{0x006c, XCB_MOD_MASK_4 | XCB_MOD_MASK_SHIFT},
 	};
 
 	int connect(WindowManager* wm) {
