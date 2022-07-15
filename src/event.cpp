@@ -125,8 +125,10 @@ namespace presto {
 						} else {
 							wm->workspaces[wm->monitors[wm->workspaces[keysym -48].monitor].currentWorkspace].active = false;
 						}
-						wm->monitors[wm->workspaces[keysym - 48].monitor].currentWorkspace = keysym - 48;
 					}
+					xcb_warp_pointer(wm->connection, XCB_NONE, wm->screen->root, 0, 0, 0, 0, wm->monitors[wm->workspaces[keysym - 48].monitor].width / 2 + wm->monitors[wm->workspaces[keysym - 48].monitor].x, wm->monitors[wm->workspaces[keysym - 48].monitor].height / 2 + wm->monitors[wm->workspaces[keysym - 48].monitor].y);
+					xcb_flush(wm->connection);
+					wm->monitors[wm->workspaces[keysym - 48].monitor].currentWorkspace = keysym - 48;
 				} else {
 					for (it = wm->workspaces[wm->monitors[monitor].currentWorkspace].windows.begin(); it != wm->workspaces[wm->monitors[monitor].currentWorkspace].windows.end(); ++it) {
 						xcb_unmap_window(wm->connection, *it);
@@ -143,6 +145,7 @@ namespace presto {
 				for (it = wm->workspaces[keysym - 48].windows.begin(); it != wm->workspaces[keysym -48].windows.end(); ++it) {
 					xcb_map_window(wm->connection, *it);
 				}
+				wm->workspaces[keysym - 48].active = true;
 			}
 		}
 	}
