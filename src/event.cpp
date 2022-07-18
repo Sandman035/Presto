@@ -32,6 +32,7 @@ namespace presto {
 		xcb_query_pointer_reply_t* pointer = xcb_query_pointer_reply(wm->connection, coord, 0);
 		if (wm->value == 1 && wm->window != 0) {
 			xcb_configure_window(wm->connection, wm->window, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, (uint32_t[]){pointer->root_x - wm->offsetX, pointer->root_y - wm->offsetY});
+			//check if window moved to another monitor
 		} else if (wm->value == 3 && wm->window != 0) {
 			xcb_get_geometry_cookie_t geoCookie = xcb_get_geometry(wm->connection, wm->window);
 			xcb_get_geometry_reply_t* geometry = xcb_get_geometry_reply(wm->connection, geoCookie, 0);
@@ -136,30 +137,18 @@ namespace presto {
 		xcb_map_request_event_t* mapEvent = (xcb_map_request_event_t*)event;
 		xcb_map_window(wm->connection, mapEvent->window);
 	
-		if (wm->monitors.empty()) {
+		int monitor = getMonitorUnderCursor(wm->connection, wm->screen->root, wm->monitors);
+		wm->workspaces[wm->monitors[monitor].currentWorkspace].windows.push_back(mapEvent->window);
+		wm->workspaces[wm->monitors[monitor].currentWorkspace].active = true;
 		xcb_configure_window(wm->connection,
 				mapEvent->window,
 				XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT | XCB_CONFIG_WINDOW_BORDER_WIDTH,
 				(uint32_t[]){
-				(uint32_t)(wm->screen->width_in_pixels / 2) - (800 / 2),
-				(uint32_t)(wm->screen->height_in_pixels / 2) - (600 / 2),
+				(uint32_t)wm->monitors[monitor].x + (wm->monitors[monitor].width / 2) - (800 / 2),
+				(uint32_t)wm->monitors[monitor].y + (wm->monitors[monitor].height	/ 2) - (600 / 2),
 				800,
 				600,
 				1});
-		} else {
-			int monitor = getMonitorUnderCursor(wm->connection, wm->screen->root, wm->monitors);
-			wm->workspaces[wm->monitors[monitor].currentWorkspace].windows.push_back(mapEvent->window);
-			wm->workspaces[wm->monitors[monitor].currentWorkspace].active = true;
-			xcb_configure_window(wm->connection,
-					mapEvent->window,
-					XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y | XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT | XCB_CONFIG_WINDOW_BORDER_WIDTH,
-					(uint32_t[]){
-					(uint32_t)wm->monitors[monitor].x + (wm->monitors[monitor].width / 2) - (800 / 2),
-					(uint32_t)wm->monitors[monitor].y + (wm->monitors[monitor].height	/ 2) - (600 / 2),
-					800,
-					600,
-					1});
-		}
 
 		xcb_flush(wm->connection);
 		xcb_change_window_attributes_checked(wm->connection, mapEvent->window, XCB_CW_EVENT_MASK, (uint32_t[]){XCB_EVENT_MASK_ENTER_WINDOW | XCB_EVENT_MASK_FOCUS_CHANGE});

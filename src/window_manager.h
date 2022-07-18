@@ -19,7 +19,7 @@ namespace presto {
 		std::vector<Monitor> monitors;
 		Workspace workspaces[10];
 
-		xcb_drawable_t window;
+		xcb_window_t window;
 
 		int keyWorkspaces[4] = {
 			1,

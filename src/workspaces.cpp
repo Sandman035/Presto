@@ -1,6 +1,7 @@
 #include "workspaces.h"
 
 #include "window_manager.h"
+#include <algorithm>
 
 namespace presto {
 	void changeWorkspace(WindowManager* wm, int number) {
