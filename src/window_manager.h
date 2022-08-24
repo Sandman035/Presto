@@ -20,6 +20,7 @@ namespace presto {
 		Workspace workspaces[10];
 
 		xcb_window_t window;
+		int currentMonitor;
 
 		int keyWorkspaces[4] = {
 			1,

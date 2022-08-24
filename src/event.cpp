@@ -32,7 +32,21 @@ namespace presto {
 		xcb_query_pointer_reply_t* pointer = xcb_query_pointer_reply(wm->connection, coord, 0);
 		if (wm->value == 1 && wm->window != 0) {
 			xcb_configure_window(wm->connection, wm->window, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, (uint32_t[]){pointer->root_x - wm->offsetX, pointer->root_y - wm->offsetY});
-			//check if window moved to another monitor
+
+			int monitor = getMonitorUnderCursor(wm->connection, wm->screen->root, wm->monitors);
+			if (wm->currentMonitor != monitor) {
+				for (int i = 0; i < sizeof(wm->workspaces)/sizeof(wm->workspaces[0]); i++) {
+					if (wm->workspaces[i].windows.empty()) 
+						continue;
+					wm->workspaces[i].windows.remove(wm->window);
+				}
+				wm->workspaces[wm->monitors[monitor].currentWorkspace].windows.push_back(wm->window);
+				wm->workspaces[wm->monitors[monitor].currentWorkspace].active = true;
+
+				if (wm->workspaces[wm->monitors[wm->currentMonitor].currentWorkspace].windows.empty()) {
+					wm->workspaces[wm->monitors[wm->currentMonitor].currentWorkspace].active = true;
+				}
+			}
 		} else if (wm->value == 3 && wm->window != 0) {
 			xcb_get_geometry_cookie_t geoCookie = xcb_get_geometry(wm->connection, wm->window);
 			xcb_get_geometry_reply_t* geometry = xcb_get_geometry_reply(wm->connection, geoCookie, 0);
@@ -83,6 +97,8 @@ namespace presto {
 			wm->offsetY = pointer->root_y - geometry->y;
 			wm->offsetX2 = geometry->width - wm->offsetX;
 			wm->offsetY2 = geometry->height - wm->offsetY;
+
+			wm->currentMonitor = getMonitorUnderCursor(wm->connection, wm->screen->root, wm->monitors);
 		}
 	}
 
