@@ -40,4 +40,20 @@ namespace presto {
 			wm->workspaces[number].active = true;
 		}
 	}
+
+	void moveToWorkspace(WindowManager* wm, xcb_window_t window, int number) {
+		for (int i = 0; i < sizeof(wm->workspaces)/sizeof(wm->workspaces[0]); i++) {
+			if (wm->workspaces[i].windows.empty()) 
+				continue;
+			wm->workspaces[i].windows.remove(window);
+
+			if (wm->workspaces[i].windows.empty()) {
+				wm->workspaces[i].active = false;
+			}
+		}
+
+		wm->workspaces[number].windows.push_back(wm->window);
+		wm->workspaces[number].active = true;
+
+	}
 }

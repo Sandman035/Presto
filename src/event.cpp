@@ -35,17 +35,7 @@ namespace presto {
 
 			int monitor = getMonitorUnderCursor(wm->connection, wm->screen->root, wm->monitors);
 			if (wm->currentMonitor != monitor) {
-				for (int i = 0; i < sizeof(wm->workspaces)/sizeof(wm->workspaces[0]); i++) {
-					if (wm->workspaces[i].windows.empty()) 
-						continue;
-					wm->workspaces[i].windows.remove(wm->window);
-				}
-				wm->workspaces[wm->monitors[monitor].currentWorkspace].windows.push_back(wm->window);
-				wm->workspaces[wm->monitors[monitor].currentWorkspace].active = true;
-
-				if (wm->workspaces[wm->monitors[wm->currentMonitor].currentWorkspace].windows.empty()) {
-					wm->workspaces[wm->monitors[wm->currentMonitor].currentWorkspace].active = true;
-				}
+				moveToWorkspace(wm, wm->window, wm->monitors[monitor].currentWorkspace);
 			}
 		} else if (wm->value == 3 && wm->window != 0) {
 			xcb_get_geometry_cookie_t geoCookie = xcb_get_geometry(wm->connection, wm->window);

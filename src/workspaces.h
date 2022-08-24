@@ -14,4 +14,6 @@ namespace presto {
 	};
 
 	void changeWorkspace(WindowManager* wm, int number);
+
+	void moveToWorkspace(WindowManager* wm, xcb_window_t window, int number);
 }
