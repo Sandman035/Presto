@@ -119,6 +119,10 @@ namespace presto {
 			wait(NULL);
 		} else if (keysym >= 0x0030 && keysym <= 0x0039 && keyEvent->state == XCB_MOD_MASK_4) {
 			changeWorkspace(wm, keysym - 48);
+		} else if (keysym >= 0x0030 && keysym <= 0x0039 && keyEvent->state == XCB_MOD_MASK_4 | XCB_MOD_MASK_SHIFT) {
+			//Move window to workspace
+
+		//Key Workspaces
 		} else if (keysym == 0x0068 && keyEvent->state == XCB_MOD_MASK_4) {
 			changeWorkspace(wm, wm->keyWorkspaces[0]);
 		} else if (keysym == 0x006a && keyEvent->state == XCB_MOD_MASK_4) {

@@ -54,7 +54,7 @@ namespace presto {
 				continue;
 			wm->workspaces[i].windows.remove(window);
 
-			if (wm->workspaces[i].windows.empty()) {
+			if (wm->workspaces[i].windows.empty() && wm->monitors[wm->workspaces[i].monitor].currentWorkspace != i) {
 				wm->workspaces[i].active = false;
 			}
 		}
