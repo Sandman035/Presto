@@ -121,6 +121,20 @@ namespace presto {
 			changeWorkspace(wm, keysym - 48);
 		} else if (keysym >= 0x0030 && keysym <= 0x0039 && keyEvent->state == XCB_MOD_MASK_4 | XCB_MOD_MASK_SHIFT) {
 			//Move window to workspace
+			//TODO: Center the window on the monitor
+			if (wm->workspaces[keysym - 48].active && wm->workspaces[keysym - 48].monitor != getMonitorUnderCursor(wm->connection, wm->screen->root, wm->monitors)) {
+				xcb_configure_window(wm->connection, wm->window, XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y, (uint32_t[]){(uint32_t)wm->monitors[wm->workspaces[keysym - 48].monitor].x + wm->monitors[wm->workspaces[keysym - 48].monitor].width / 2,
+						(uint32_t)wm->monitors[wm->workspaces[keysym - 48].monitor].y + wm->monitors[wm->workspaces[keysym - 48].monitor].height / 2});
+			} else {
+				wm->workspaces[keysym - 48].active = true;
+				wm->workspaces[keysym - 48].monitor = getMonitorUnderCursor(wm->connection, wm->screen->root, wm->monitors);
+			}
+
+			if (wm->monitors[wm->workspaces[keysym - 48].monitor].currentWorkspace != keysym - 48) {
+				xcb_unmap_window(wm->connection, wm->window);
+			}
+
+			moveToWorkspace(wm, wm->window, keysym - 48);
 
 		//Key Workspaces
 		} else if (keysym == 0x0068 && keyEvent->state == XCB_MOD_MASK_4) {
